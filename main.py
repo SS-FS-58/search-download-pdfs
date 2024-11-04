@@ -15,7 +15,7 @@ from PyPDF2 import PdfReader
 options = Options()
 options.add_argument('--headless')  # Enable headless mode
 options.add_argument('--disable-gpu')  # Disable GPU for headless mode
-
+options.binary_location = '/home/dev/Downloads/firefox/firefox'  
 
 # Set up WebDriver
 driver = webdriver.Firefox(service=Service(GeckoDriverManager().install()), options=options)
@@ -27,8 +27,10 @@ def search_pdfs(keyword, max_count):
     pdf_links = set()  # Use a set to avoid duplicate links
     scroll_pause_time = 2
     total_results = 0
+    page_number = 0  # To keep track of the page number
 
     while total_results < max_count:
+        page_number += 1
         # Scroll down to the bottom of the page
         driver.find_element(By.TAG_NAME, 'body').send_keys(Keys.END)
         
@@ -47,14 +49,17 @@ def search_pdfs(keyword, max_count):
                 if total_results >= max_count:
                     break
         
-        # Click the "More results" button if it exists
+        if total_results >= max_count:
+            break
+        
+        # Click the "Next" button if it exists
         try:
-            more_results_button = driver.find_element(By.XPATH, '//a[@aria-label="More results"]')
-            if more_results_button:
-                more_results_button.click()
+            next_button = driver.find_element(By.ID, 'pnnext')
+            if next_button:
+                next_button.click()
                 time.sleep(scroll_pause_time)  # Wait for new results to load
         except Exception as e:
-            print(f"No more results button found: {e}")
+            print(f"No next button found on page {page_number}: {e}")
             break  # Exit loop if no more results button is found
 
     return list(pdf_links)
@@ -81,7 +86,7 @@ def get_pdf_page_count(file_path):
     except Exception as e:
         print(f"Failed to get page size for {file_path}: {e}")
         return None
-    
+        
 def download_pdfs(pdf_links, download_folder):
     if not os.path.exists(download_folder):
         os.makedirs(download_folder)
@@ -103,7 +108,6 @@ def download_pdfs(pdf_links, download_folder):
             response = requests.get(link, stream=True)
             response.raise_for_status()
 
-            # filename = os.path.join(download_folder, os.path.basename(link))
             with open(filename, 'wb') as pdf_file:
                 for chunk in response.iter_content(chunk_size=8192):
                     pdf_file.write(chunk)
@@ -129,7 +133,6 @@ def main():
     while True:
         keyword = input("Enter the search keyword: ")
         max_count = int(input("Enter the maximum number: "))
-        # max_count = 1000
         download_folder = keyword.replace(" ", "_") + '_pdfs'  # Replace spaces with underscores for folder name
 
         pdf_links = search_pdfs(keyword, max_count)
