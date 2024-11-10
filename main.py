@@ -13,9 +13,9 @@ from PyPDF2 import PdfReader
 
 # Set up Firefox options
 options = Options()
-options.add_argument('--headless')  # Enable headless mode
+# options.add_argument('--headless')  # Enable headless mode
 options.add_argument('--disable-gpu')  # Disable GPU for headless mode
-options.binary_location = '/home/dev/Downloads/firefox/firefox'  
+# options.binary_location = '/home/dev/Downloads/firefox/firefox'  
 
 # Set up WebDriver
 driver = webdriver.Firefox(service=Service(GeckoDriverManager().install()), options=options)
@@ -23,6 +23,8 @@ driver = webdriver.Firefox(service=Service(GeckoDriverManager().install()), opti
 def search_pdfs(keyword, max_count):
     search_url = f"https://www.google.com/search?q={keyword}+filetype:pdf+after:2015&hl=en"
     driver.get(search_url)
+    
+    time.sleep(10)
 
     pdf_links = set()  # Use a set to avoid duplicate links
     scroll_pause_time = 2
@@ -30,6 +32,7 @@ def search_pdfs(keyword, max_count):
     page_number = 0  # To keep track of the page number
 
     while total_results < max_count:
+        
         page_number += 1
         # Scroll down to the bottom of the page
         driver.find_element(By.TAG_NAME, 'body').send_keys(Keys.END)
