@@ -95,7 +95,18 @@ def download_pdfs(pdf_links, download_folder):
         os.makedirs(download_folder)
 
     records = []  # List to hold records for the Excel file
-    download_count = 0
+    excel_filename = download_folder + '.xlsx'  # Set the Excel filename
+
+    if os.path.exists(excel_filename):
+        # Load existing records if the file already exists
+        try:
+            existing_df = pd.read_excel(excel_filename)
+            records = existing_df.to_dict(orient='records')
+            print(f"Loaded existing records from {excel_filename}.")
+        except Exception as e:
+            print(f"Failed to load existing Excel file: {e}")
+
+    download_count = len(records)  # Start counting from existing records
     
     for link in pdf_links:
         try:
@@ -121,16 +132,17 @@ def download_pdfs(pdf_links, download_folder):
             
             print(f"Downloaded {download_count} : {title} , pages {page_count}")
             # Add record to the list
-            records.append({'title': title, 'link': link, 'pages': page_count})
-
+            record = {'title': title, 'link': link, 'pages': page_count}
+            records.append(record)
+            
+            # Save updated records to the Excel file
+            df = pd.DataFrame(records)
+            df.to_excel(excel_filename, index=False)
+            print(f"Updated Excel file with record: {title}")
+        
         except Exception as e:
             print(f"Failed to download {link}: {e}")
-    
-    # Save records to an Excel file
-    df = pd.DataFrame(records)
-    excel_filename = download_folder + '.xlsx'
-    df.to_excel(excel_filename, index=False)
-    print(f"Saved records {len(records)} to {excel_filename}")
+
 
 def main():
     while True:
