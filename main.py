@@ -7,6 +7,10 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.keys import Keys
 from webdriver_manager.firefox import GeckoDriverManager
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 import re
 import pandas as pd
 from PyPDF2 import PdfReader
@@ -31,6 +35,8 @@ def search_pdfs(keyword, max_count):
     total_results = 0
     page_number = 0  # To keep track of the page number
 
+    scroll_pause_time = 2  # Adjust as needed
+    
     while total_results < max_count:
         
         page_number += 1
@@ -57,13 +63,28 @@ def search_pdfs(keyword, max_count):
         
         # Click the "Next" button if it exists
         try:
-            next_button = driver.find_element(By.ID, 'pnnext')
-            if next_button:
-                next_button.click()
-                time.sleep(scroll_pause_time)  # Wait for new results to load
+            # Wait for the next button to be clickable
+            next_button = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.ID, "pnnext"))
+            )
+            
+            # Scroll to the button (Selenium 4+)
+            driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", next_button)
+            
+            # Small delay to ensure visibility
+            time.sleep(0.5)
+            
+            # Click using ActionChains (more reliable than direct click)
+            ActionChains(driver).move_to_element(next_button).click().perform()
+            
+            # Wait for new results to load
+            time.sleep(scroll_pause_time)
+            
+            print(f"Navigated to page {page_number}")
+            
         except Exception as e:
-            print(f"No next button found on page {page_number}: {e}")
-            break  # Exit loop if no more results button is found
+            print(f"No next button found on page {page_number}. Ending pagination.")
+            break
 
     return list(pdf_links)
 
