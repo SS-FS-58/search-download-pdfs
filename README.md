@@ -1,3 +1,2 @@
 create .exe file.
-
-pyinstaller --onefile main.py
+pyinstaller --noconfirm --onefile --console  main.py
